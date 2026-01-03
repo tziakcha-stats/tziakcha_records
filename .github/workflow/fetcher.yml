@@ -1,0 +1,124 @@
+name: Fetch Records
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: '开始日期 (YYYYMMDD)'
+        required: false
+        type: string
+      end_date:
+        description: '结束日期 (YYYYMMDD)'
+        required: false
+        type: string
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout main repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Clone tziakcha_record_miner repository
+      run: |
+        cd handler
+        git clone https://github.com/tziakcha-stats/tziakcha_record_miner.git
+        cd tziakcha_record_miner
+        git submodule update --init --recursive
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential
+    
+    - name: Build record miner
+      run: |
+        cd handler/tziakcha_record_miner
+        mkdir -p build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+    
+    - name: Determine date range
+      id: dates
+      run: |
+        if [ -n "${{ github.event.inputs.start_date }}" ]; then
+          START_DATE="${{ github.event.inputs.start_date }}"
+        else
+          START_DATE=$(date -d "yesterday" +%Y%m%d)
+        fi
+        
+        echo "start_date=${START_DATE}" >> $GITHUB_OUTPUT
+        
+        if [ -n "${{ github.event.inputs.end_date }}" ]; then
+          END_DATE="${{ github.event.inputs.end_date }}"
+          echo "end_date=${END_DATE}" >> $GITHUB_OUTPUT
+          echo "Fetching records from ${START_DATE} to ${END_DATE}"
+        else
+          echo "end_date=" >> $GITHUB_OUTPUT
+          echo "Fetching records for ${START_DATE}"
+        fi
+    
+    - name: Fetch records
+      env:
+        TZI_HISTORY_COOKIE: ${{ secrets.TZI_HISTORY_COOKIE }}
+      run: |
+        cd handler/tziakcha_record_miner
+        chmod +x ci/fetch/fetch_date_range.sh
+        
+        if [ -n "${{ steps.dates.outputs.end_date }}" ]; then
+          ./ci/fetch/fetch_date_range.sh \
+            --start-date ${{ steps.dates.outputs.start_date }} \
+            --end-date ${{ steps.dates.outputs.end_date }}
+        else
+          ./ci/fetch/fetch_date_range.sh \
+            --start-date ${{ steps.dates.outputs.start_date }}
+        fi
+    
+    - name: Copy data to repository root
+      run: |
+        mkdir -p session records
+        
+        if [ -d "handler/tziakcha_record_miner/data/session" ]; then
+          cp -rf handler/tziakcha_record_miner/data/session/* session/ || true
+          echo "Copied session data"
+        fi
+        
+        if [ -d "handler/tziakcha_record_miner/data/records" ]; then
+          cp -rf handler/tziakcha_record_miner/data/records/* records/ || true
+          echo "Copied records data"
+        fi
+        
+        echo "Session files:"
+        ls -lh session/ || echo "No session files"
+        echo "Records directories:"
+        ls -lh records/ || echo "No records directories"
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+    
+    - name: Commit and push changes
+      run: |
+        git add session/ records/
+        
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        
+        git commit -m "Auto-fetch records for ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -rf handler/tziakcha_record_miner
