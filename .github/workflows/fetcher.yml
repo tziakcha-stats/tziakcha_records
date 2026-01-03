@@ -26,7 +26,6 @@ jobs:
     
     - name: Clone tziakcha_record_miner repository
       run: |
-        cd handler
         git clone https://github.com/tziakcha-stats/tziakcha_record_miner.git
         cd tziakcha_record_miner
         git submodule update --init --recursive
@@ -38,7 +37,7 @@ jobs:
     
     - name: Build record miner
       run: |
-        cd handler/tziakcha_record_miner
+        cd tziakcha_record_miner
         mkdir -p build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release
@@ -68,7 +67,7 @@ jobs:
       env:
         TZI_HISTORY_COOKIE: ${{ secrets.TZI_HISTORY_COOKIE }}
       run: |
-        cd handler/tziakcha_record_miner
+        cd tziakcha_record_miner
         chmod +x ci/fetch/fetch_date_range.sh
         
         if [ -n "${{ steps.dates.outputs.end_date }}" ]; then
@@ -84,13 +83,13 @@ jobs:
       run: |
         mkdir -p session records
         
-        if [ -d "handler/tziakcha_record_miner/data/session" ]; then
-          cp -rf handler/tziakcha_record_miner/data/session/* session/ || true
+        if [ -d "tziakcha_record_miner/data/session" ]; then
+          cp -rf tziakcha_record_miner/data/session/* session/ || true
           echo "Copied session data"
         fi
         
-        if [ -d "handler/tziakcha_record_miner/data/records" ]; then
-          cp -rf handler/tziakcha_record_miner/data/records/* records/ || true
+        if [ -d "tziakcha_record_miner/data/records" ]; then
+          cp -rf tziakcha_record_miner/data/records/* records/ || true
           echo "Copied records data"
         fi
         
@@ -121,4 +120,4 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        rm -rf handler/tziakcha_record_miner
+        rm -rf tziakcha_record_miner
