@@ -104,6 +104,8 @@ jobs:
         git config --local user.name "github-actions[bot]"
     
     - name: Commit and push changes
+      env:
+        GH_PAT: ${{ secrets.GH_PAT }}
       run: |
         git add session/ records/
         
@@ -113,7 +115,7 @@ jobs:
         fi
         
         git commit -m "Auto-fetch records for ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}"
-        git push
+        git push https://x-access-token:${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF#refs/heads/}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
