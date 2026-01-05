@@ -13,6 +13,11 @@ on:
         description: '结束日期 (YYYYMMDD)'
         required: false
         type: string
+      use_local_history:
+        description: '是否使用本地history/history_util0103作为history文件'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   fetch:
@@ -62,6 +67,15 @@ jobs:
           echo "end_date=" >> $GITHUB_OUTPUT
           echo "Fetching records for ${START_DATE}"
         fi
+
+    - name: Set local history flag
+      id: local_history
+      run: |
+        if [ "${{ github.event.inputs.use_local_history }}" = "true" ]; then
+          echo "USE_LOCAL_HISTORY=true" >> $GITHUB_OUTPUT
+        else
+          echo "USE_LOCAL_HISTORY=false" >> $GITHUB_OUTPUT
+        fi
     
     - name: Fetch records
       env:
@@ -69,13 +83,18 @@ jobs:
       run: |
         cd tziakcha_record_miner
         chmod +x ci/fetch/fetch_date_range.sh
-        
+        if [ "${{ steps.local_history.outputs.USE_LOCAL_HISTORY }}" = "true" ]; then
+          HISTORY_ARG="--local --history-file ../history/history_util0103.json"
+        else
+          HISTORY_ARG=""
+        fi
+
         if [ -n "${{ steps.dates.outputs.end_date }}" ]; then
-          ./ci/fetch/fetch_date_range.sh \
+          ./ci/fetch/fetch_date_range.sh $HISTORY_ARG \
             --start-date ${{ steps.dates.outputs.start_date }} \
             --end-date ${{ steps.dates.outputs.end_date }}
         else
-          ./ci/fetch/fetch_date_range.sh \
+          ./ci/fetch/fetch_date_range.sh $HISTORY_ARG \
             --start-date ${{ steps.dates.outputs.start_date }}
         fi
     
