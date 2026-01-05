@@ -1,0 +1,102 @@
+name: Generate Stats
+
+on:
+  workflow_dispatch:
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout main repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Clone tziakcha_record_miner repository
+      run: |
+        git clone https://github.com/tziakcha-stats/tziakcha_record_miner.git
+        cd tziakcha_record_miner
+        git submodule update --init --recursive
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential
+    
+    - name: Build record miner
+      run: |
+        cd tziakcha_record_miner
+        mkdir -p build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+    
+    - name: Prepare data directories
+      run: |
+        mkdir -p tziakcha_record_miner/data/record
+        mkdir -p tziakcha_record_miner/data/player
+        
+        if [ -d "records" ]; then
+          cp -rf records/* tziakcha_record_miner/data/record/ || true
+          echo "Copied records to miner data directory"
+        else
+          echo "No records directory found"
+        fi
+        
+        echo "Records in miner directory:"
+        ls -lh tziakcha_record_miner/data/record/ || echo "No records"
+    
+    - name: Run stats analysis
+      run: |
+        cd tziakcha_record_miner
+        ./build/src/analyzer/stats_cli \
+          --dir ./data/record/ \
+          --player-stats \
+          --player-dir data/player
+        
+        echo "Generated player stats:"
+        ls -lh data/player/ || echo "No player stats generated"
+    
+    - name: Copy player stats to repository root
+      run: |
+        mkdir -p player
+        
+        if [ -d "tziakcha_record_miner/data/player" ]; then
+          cp -rf tziakcha_record_miner/data/player/* player/ || true
+          echo "Copied player stats"
+        fi
+        
+        echo "Player stats files:"
+        ls -lh player/ || echo "No player stats files"
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+    
+    - name: Commit and push changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git add player/
+        
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+
+        git commit -m "Auto-generate player stats"
+
+        git pull --rebase
+        if [ $? -ne 0 ]; then
+          echo "Rebase failed due to conflicts. Please resolve manually."
+          exit 1
+        fi
+
+        git push
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -rf tziakcha_record_miner
