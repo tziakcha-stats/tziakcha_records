@@ -100,3 +100,96 @@ jobs:
       if: always()
       run: |
         rm -rf tziakcha_record_miner
+
+  rank:
+    needs: stats
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout main repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Clone tziakcha_record_miner repository
+      run: |
+        git clone https://github.com/tziakcha-stats/tziakcha_record_miner.git
+    
+    - name: Prepare data directories
+      run: |
+        mkdir -p tziakcha_record_miner/data/rank
+        
+        if [ -d "player" ]; then
+          cp -rf player tziakcha_record_miner/data/
+          echo "Copied player data to miner directory"
+        else
+          echo "No player directory found"
+        fi
+        
+        echo "Player files:"
+        ls -lh tziakcha_record_miner/data/player/ || echo "No player data"
+    
+    - name: Generate player rankings
+      run: |
+        cd tziakcha_record_miner
+        
+        bash ./ci/stats/rank_players.sh stats.average_step_seconds -p ./data/player -r ./data/rank
+        
+        bash ./ci/stats/rank_players.sh current_elo -p ./data/player -r ./data/rank
+        
+        bash ./ci/stats/rank_players.sh total_rounds -p ./data/player -r ./data/rank
+        
+        echo "Generated rankings:"
+        ls -lh data/rank/ || echo "No rankings generated"
+    
+    - name: Generate history wins
+      run: |
+        cd tziakcha_record_miner
+        
+        bash ./ci/stats/history_wins.sh -p ./data/player/ -r ./data/rank/ -k 100
+        
+        echo "Generated history wins:"
+        ls -lh data/rank/ || echo "No history wins generated"
+    
+    - name: Copy rankings to repository root
+      run: |
+        mkdir -p rank
+        
+        if [ -d "tziakcha_record_miner/data/rank" ]; then
+          cp -rf tziakcha_record_miner/data/rank/* rank/ || true
+          echo "Copied rankings"
+        fi
+        
+        echo "Rank files:"
+        ls -lh rank/ || echo "No rank files"
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+    
+    - name: Commit and push changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git add rank/
+        
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+
+        git commit -m "Auto-generate player rankings"
+
+        git pull --rebase
+        if [ $? -ne 0 ]; then
+          echo "Rebase failed due to conflicts. Please resolve manually."
+          exit 1
+        fi
+
+        git push
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -rf tziakcha_record_miner
