@@ -142,3 +142,56 @@ jobs:
       if: always()
       run: |
         rm -rf tziakcha_record_miner
+    
+    - name: Create issue on failure
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = `❌ Fetcher Workflow Failed - ${new Date().toISOString().split('T')[0]}`;
+          
+          const inputs = {
+            start_date: '${{ github.event.inputs.start_date }}' || 'Not provided (default: yesterday)',
+            end_date: '${{ github.event.inputs.end_date }}' || 'Not provided (default: same as start_date)',
+            use_local_history: '${{ github.event.inputs.use_local_history }}' || 'false'
+          };
+          
+          const body = `## 🔍 Workflow Failure Report
+
+          ### Trigger Information
+          - **Trigger Type**: ${{ github.event_name }}
+          - **Run ID**: ${{ github.run_id }}
+          - **Run Number**: ${{ github.run_number }}
+          - **Branch**: ${{ github.ref_name }}
+          - **Commit**: ${{ github.sha }}
+
+          ### Input Parameters
+          \`\`\`json
+          ${JSON.stringify(inputs, null, 2)}
+          \`\`\`
+
+          ### Failed Steps
+          - Please check the workflow run logs for detailed error information
+
+          ### Logs
+          [View Full Workflow Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          ### Quick Debug Commands
+          \`\`\`bash
+          # View detailed logs
+          gh run view ${{ github.run_id }} --log
+
+          # Re-run the workflow
+          gh run rerun ${{ github.run_id }}
+          \`\`\`
+
+          ---
+          *Generated automatically by workflow on ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}*`;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['workflow-failure', 'fetcher']
+          });
