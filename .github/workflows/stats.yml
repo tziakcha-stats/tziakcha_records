@@ -137,7 +137,7 @@ jobs:
         
         bash ./ci/stats/rank_players.sh current_elo -p ./data/player -r ./data/rank
         
-        bash ./ci/stats/rank_players.sh total_rounds -p ./data/player -r ./data/rank
+        bash ./ci/stats/rank_players.sh stats.total_rounds -p ./data/player -r ./data/rank
         
         echo "Generated rankings:"
         ls -lh data/rank/ || echo "No rankings generated"
