@@ -23,6 +23,16 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake build-essential
+
+    - name: Clean up disk space
+      run: |
+        sudo apt-get clean
+        sudo apt-get autoremove -y
+        sudo rm -rf /usr/share/dotnet/
+        sudo rm -rf /opt/ghc/
+        sudo rm -rf /usr/local/lib/android/
+        sudo rm -rf /usr/share/swift/
+        sudo docker system prune -af || true
     
     - name: Build record miner
       run: |
