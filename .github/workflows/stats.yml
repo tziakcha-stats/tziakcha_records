@@ -48,7 +48,7 @@ jobs:
         mkdir -p tziakcha_record_miner/data/player
         
         if [ -d "records" ]; then
-          mv records/* tziakcha_record_miner/data/record/ || true
+          cp -rf records/* tziakcha_record_miner/data/record/ || true
           echo "Copied records to miner data directory"
         else
           echo "No records directory found"
@@ -73,7 +73,7 @@ jobs:
         mkdir -p player
         
         if [ -d "tziakcha_record_miner/data/player" ]; then
-          mv tziakcha_record_miner/data/player/* player/ || true
+          cp -rf tziakcha_record_miner/data/player/* player/ || true
           echo "Copied player stats"
         fi
         
@@ -130,7 +130,7 @@ jobs:
         mkdir -p tziakcha_record_miner/data/rank
         
         if [ -d "player" ]; then
-          mv player tziakcha_record_miner/data/
+          cp -rf player tziakcha_record_miner/data/
           echo "Copied player data to miner directory"
         else
           echo "No player directory found"
@@ -174,7 +174,7 @@ jobs:
         mkdir -p rank
         
         if [ -d "tziakcha_record_miner/data/rank" ]; then
-          mv tziakcha_record_miner/data/rank/* rank/ || true
+          cp -rf tziakcha_record_miner/data/rank/* rank/ || true
           echo "Copied rankings"
         fi
         
