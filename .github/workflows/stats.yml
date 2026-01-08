@@ -147,7 +147,15 @@ jobs:
         
         bash ./ci/stats/rank_players.sh current_elo -p ./data/player -r ./data/rank
         
-        bash ./ci/stats/rank_players.sh stats.total_rounds -p ./data/player -r ./data/rank
+        bash ./ci/stats/rank_players.sh stats.avg_starting_shanten -p ./data/player -r ./data/rank
+
+        bash ./ci/stats/rank_player_rates.sh win_rate -p ./data/player -r ./data/rank
+
+        bash ./ci/stats/rank_player_rates.sh tsumo_rate -p ./data/player -r ./data/rank
+
+        bash ./ci/stats/rank_player_rates.sh deal_in_rate -p ./data/player -r ./data/rank
+
+        bash ./ci/stats/rank_player_rates.sh tsumo_against_rate -p ./data/player -r ./data/rank
         
         echo "Generated rankings:"
         ls -lh data/rank/ || echo "No rankings generated"
