@@ -127,6 +127,8 @@ jobs:
     
     - name: Prepare data directories
       run: |
+        git pull
+        
         mkdir -p tziakcha_record_miner/data/rank
         
         if [ -d "player" ]; then
