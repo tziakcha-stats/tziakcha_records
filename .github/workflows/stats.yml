@@ -12,6 +12,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 1
     
     - name: Clone tziakcha_record_miner repository
       run: |
@@ -24,15 +25,16 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y cmake build-essential
 
-    - name: Clean up disk space
-      run: |
-        sudo apt-get clean
-        sudo apt-get autoremove -y
-        sudo rm -rf /usr/share/dotnet/
-        sudo rm -rf /opt/ghc/
-        sudo rm -rf /usr/local/lib/android/
-        sudo rm -rf /usr/share/swift/
-        sudo docker system prune -af || true
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        root-reserve-mb: 512
+        swap-size-mb: 1024
+        remove-dotnet: 'true'
+        remove-android: 'true'
+        remove-haskell: 'true'
+        remove-codeql: 'true'
+        remove-docker-images: 'true'
     
     - name: Build record miner
       run: |
@@ -48,7 +50,7 @@ jobs:
         mkdir -p tziakcha_record_miner/data/player
         
         if [ -d "records" ]; then
-          cp -rf records/* tziakcha_record_miner/data/record/ || true
+          ln -s ./records tziakcha_record_miner/data/record || true
           echo "Copied records to miner data directory"
         else
           echo "No records directory found"
@@ -120,6 +122,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 1
     
     - name: Clone tziakcha_record_miner repository
       run: |
@@ -132,7 +135,7 @@ jobs:
         mkdir -p tziakcha_record_miner/data/rank
         
         if [ -d "player" ]; then
-          cp -rf player tziakcha_record_miner/data/
+          ln -s player tziakcha_record_miner/data/
           echo "Copied player data to miner directory"
         else
           echo "No player directory found"
