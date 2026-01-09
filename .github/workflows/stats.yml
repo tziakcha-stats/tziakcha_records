@@ -46,17 +46,19 @@ jobs:
     
     - name: Prepare data directories
       run: |
+        mkdir -p tziakcha_record_miner/data
         mkdir -p tziakcha_record_miner/data/player
+        rm -rf tziakcha_record_miner/data/record || true
         
         if [ -d "records" ]; then
-          ln -s ./records tziakcha_record_miner/data/record || true
-          echo "Copied records to miner data directory"
+          ln -s $(pwd)/records $(pwd)/tziakcha_record_miner/data/record
+          echo "Success: Linked $(pwd)/records to tziakcha_record_miner/data/record"
         else
-          echo "No records directory found"
+          echo "Error: records directory not found"
+          exit 1
         fi
-        
-        echo "Records in miner directory:"
-        ls -lh tziakcha_record_miner/data/record/ || echo "No records"
+
+        ls -alF tziakcha_record_miner/data/
     
     - name: Run stats analysis
       run: |
