@@ -24,7 +24,19 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 1
-    
+
+    - name: Link Runner Temp and Logs to Large Partition
+      run: |
+        mkdir -p ./runner_system_tmp
+        mkdir -p ./runner_diag_logs
+
+        echo "TMPDIR=${{ github.workspace }}/runner_system_tmp" >> $GITHUB_ENV
+
+        sudo rm -rf /home/runner/actions-runner/_diag
+        sudo ln -s ${{ github.workspace }}/runner_diag_logs /home/runner/actions-runner/_diag
+        
+        echo "Redirection complete. Logs and Temp now point to the large partition."
+        
     - name: Clone tziakcha_record_miner repository
       run: |
         git clone https://github.com/tziakcha-stats/tziakcha_record_miner.git
