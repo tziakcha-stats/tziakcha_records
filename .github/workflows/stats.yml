@@ -46,7 +46,6 @@ jobs:
     
     - name: Prepare data directories
       run: |
-        mkdir -p tziakcha_record_miner/data/record
         mkdir -p tziakcha_record_miner/data/player
         
         if [ -d "records" ]; then
