@@ -149,7 +149,8 @@ jobs:
         
         bash ./ci/stats/rank_players.sh current_elo -p ./data/player -r ./data/rank
         
-        bash ./ci/stats/rank_players.sh stats.avg_starting_shanten -p ./data/player -r ./data/rank
+        bash ./ci/stats/rank_players.sh stats.avg_starting_shanten_13 -p ./data/player -r ./data/rank
+        bash ./ci/stats/rank_players.sh stats.avg_starting_shanten_14 -p ./data/player -r ./data/rank
 
         bash ./ci/stats/rank_player_rates.sh win_rate -p ./data/player -r ./data/rank
 
